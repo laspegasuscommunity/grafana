@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  #Это конфигурация Docker Compose для запуска системы сбора и визуализации метрик Grafana.
+  grafana-oss:
+    container_name: grafana-oss
+    deploy:
+      resources:
+        limits:
+          memory: 500m
+          cpus: "0.5"
+      restart_policy:
+        condition: always
+        delay: 5s
+    env_file: grafana-oss.env
+    image: grafana/grafana-oss:main
+    # depends_on:
+    #   - grafana-image-renderer
+    #   - grafana-oncall-uwsgi
+    #   - grafana-oncall-celery
+    #   - grafana-oncall-migrate
+    volumes:
+      - "./src/data:/var/lib/grafana"
+    user: "$UID:$GID"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.http.routers.grafana-oss.entrypoints: "websecure"
+      traefik.http.routers.grafana-oss.rule: "Host(`grafana.${DOMAIN}`)"
+      traefik.http.routers.grafana-oss.service: "grafana-oss"
+      traefik.http.routers.grafana-oss.tls.certresolver: "letsencrypt"
+      traefik.http.services.grafana-oss.loadbalancer.server.port: "3000"
+
+networks:
+  default:
+    external: true
+    name: $NETWORK
